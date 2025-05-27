@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import contentfulClient, { isPreviewMode } from '../../contentfulClient';
+import contentfulClient from '../../contentfulClient';
 import MenuItemCard from '../MenuItem';
 import { Pagination, Row, Col, Typography, Spin, Alert, Input, Select } from 'antd';
 
@@ -17,8 +17,6 @@ function MenuList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const previewModeActive = isPreviewMode();
 
   useEffect(() => {
     if (!contentfulClient) {
@@ -51,63 +49,6 @@ function MenuList() {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (previewModeActive && contentfulClient) {
-      const handleContentfulMessage = async (event) => {
-        if (event.origin !== 'https://app.contentful.com' && !event.origin.endsWith('.contentful.com')) {
-          return;
-        }
-
-        const messageData = event.data;
-        if (messageData && messageData.fromContentful && messageData.action === 'EntrySaved' && messageData.entity) {
-          const updatedEntryData = messageData.entity;
-          const entryId = updatedEntryData.sys.id;
-          const contentTypeId = updatedEntryData.sys.contentType.sys.id;
-
-          console.log(`Live Preview: Received update for entry ${entryId} (type: ${contentTypeId})`);
-
-          try {
-            const freshEntry = await contentfulClient.getEntry(entryId, { include: 0 }); // Using include:0 can be lighter
-
-            if (contentTypeId === 'menuItem') {
-              setAllItems(prevItems => {
-                const itemIndex = prevItems.findIndex(item => item.sys.id === entryId);
-                if (itemIndex > -1) {
-                  const newItems = [...prevItems];
-                  newItems[itemIndex] = freshEntry;
-                  return newItems;
-                } else {
-                  return [...prevItems, freshEntry];
-                }
-              });
-            } else if (contentTypeId === 'category') {
-              setCategories(prevCategories => {
-                const catIndex = prevCategories.findIndex(cat => cat.sys.id === entryId);
-                if (catIndex > -1) {
-                  const newCategories = [...prevCategories];
-                  newCategories[catIndex] = freshEntry;
-                  return newCategories;
-                } else {
-                  return [...prevCategories, freshEntry];
-                }
-              });
-            }
-          } catch (fetchError) {
-            console.error(`Live Preview: Error re-fetching entry ${entryId}:`, fetchError);
-          }
-        }
-      };
-
-      window.addEventListener('message', handleContentfulMessage);
-      console.log('Live Preview: Event listener for Contentful messages added.');
-
-      return () => {
-        window.removeEventListener('message', handleContentfulMessage);
-        console.log('Live Preview: Event listener for Contentful messages removed.');
-      };
-    }
-  }, [previewModeActive, contentfulClient, setAllItems, setCategories]);
 
   const filteredItems = useMemo(() => {
     let items = allItems;
@@ -203,6 +144,7 @@ function MenuList() {
           const categoryName = item.fields.category?.fields?.name;
           return (
             <Col key={item.sys.id} xs={24} sm={12} md={8} lg={6}>
+              { }
               <MenuItemCard item={item} categoryName={categoryName} />
             </Col>
           );
